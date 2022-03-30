@@ -1,20 +1,25 @@
 package openrpc_document
 
+import (
+	"encoding/json"
+	"errors"
 
-import "encoding/json"
-import "errors"
+	"github.com/iancoleman/orderedmap"
+)
+
 type Openrpc string
+
 const (
-	OpenrpcEnum0 Openrpc = "1.2.6"
-	OpenrpcEnum1 Openrpc = "1.2.5"
-	OpenrpcEnum2 Openrpc = "1.2.4"
-	OpenrpcEnum3 Openrpc = "1.2.3"
-	OpenrpcEnum4 Openrpc = "1.2.2"
-	OpenrpcEnum5 Openrpc = "1.2.1"
-	OpenrpcEnum6 Openrpc = "1.2.0"
-	OpenrpcEnum7 Openrpc = "1.1.12"
-	OpenrpcEnum8 Openrpc = "1.1.11"
-	OpenrpcEnum9 Openrpc = "1.1.10"
+	OpenrpcEnum0  Openrpc = "1.2.6"
+	OpenrpcEnum1  Openrpc = "1.2.5"
+	OpenrpcEnum2  Openrpc = "1.2.4"
+	OpenrpcEnum3  Openrpc = "1.2.3"
+	OpenrpcEnum4  Openrpc = "1.2.2"
+	OpenrpcEnum5  Openrpc = "1.2.1"
+	OpenrpcEnum6  Openrpc = "1.2.0"
+	OpenrpcEnum7  Openrpc = "1.1.12"
+	OpenrpcEnum8  Openrpc = "1.1.11"
+	OpenrpcEnum9  Openrpc = "1.1.10"
 	OpenrpcEnum10 Openrpc = "1.1.9"
 	OpenrpcEnum11 Openrpc = "1.1.8"
 	OpenrpcEnum12 Openrpc = "1.1.7"
@@ -29,6 +34,7 @@ const (
 	OpenrpcEnum21 Openrpc = "1.0.0-rc1"
 	OpenrpcEnum22 Openrpc = "1.0.0-rc0"
 )
+
 type InfoObjectProperties string
 type InfoObjectDescription string
 type InfoObjectTermsOfService string
@@ -58,6 +64,7 @@ type InfoObject struct {
 }
 type ExternalDocumentationObjectDescription string
 type ExternalDocumentationObjectUrl string
+
 // information about external documentation
 type ExternalDocumentationObject struct {
 	Description *ExternalDocumentationObjectDescription `json:"description,omitempty"`
@@ -85,10 +92,13 @@ type ServerObject struct {
 	Variables   *ServerObjectVariables   `json:"variables,omitempty"`
 }
 type Servers []ServerObject
+
 // The cannonical name for the method. The name MUST be unique within the methods array.
 type MethodObjectName string
+
 // A verbose explanation of the method behavior. GitHub Flavored Markdown syntax MAY be used for rich text representation.
 type MethodObjectDescription string
+
 // A short summary of what the method does.
 type MethodObjectSummary string
 type TagObjectName string
@@ -106,6 +116,7 @@ type TagOrReference struct {
 	TagObject       *TagObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -132,18 +143,22 @@ func (o TagOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type MethodObjectTags []TagOrReference
+
 // Format the server expects the params. Defaults to 'either'.
 //
 // --- Default ---
 //
 // either
 type MethodObjectParamStructure string
+
 const (
 	MethodObjectParamStructureEnum0 MethodObjectParamStructure = "by-position"
 	MethodObjectParamStructureEnum1 MethodObjectParamStructure = "by-name"
 	MethodObjectParamStructureEnum2 MethodObjectParamStructure = "either"
 )
+
 type ContentDescriptorObjectName string
 type ContentDescriptorObjectDescription string
 type ContentDescriptorObjectSummary string
@@ -164,6 +179,7 @@ type NonNegativeInteger int64
 type NonNegativeIntegerDefaultZero int64
 type Pattern string
 type SchemaArray []JSONSchema
+
 //
 // --- Default ---
 //
@@ -172,6 +188,7 @@ type Items struct {
 	JSONSchema  *JSONSchema
 	SchemaArray *SchemaArray
 }
+
 func (a *Items) UnmarshalJSON(bytes []byte) error {
 	var ok bool
 	var myJSONSchema JSONSchema
@@ -199,23 +216,28 @@ func (o Items) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(out)
 }
+
 type UniqueItems bool
 type StringDoaGddGA string
+
 //
 // --- Default ---
 //
 // []
 type StringArray []StringDoaGddGA
+
 //
 // --- Default ---
 //
 // {}
-type Definitions map[string]interface{}
+type Definitions orderedmap.OrderedMap
+
 //
 // --- Default ---
 //
 // {}
-type Properties map[string]interface{}
+type Properties orderedmap.OrderedMap
+
 //
 // --- Default ---
 //
@@ -225,6 +247,7 @@ type DependenciesSet struct {
 	JSONSchema  *JSONSchema
 	StringArray *StringArray
 }
+
 func (a *DependenciesSet) UnmarshalJSON(bytes []byte) error {
 	var ok bool
 	var myJSONSchema JSONSchema
@@ -252,6 +275,7 @@ func (o DependenciesSet) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(out)
 }
+
 type Dependencies map[string]interface{}
 type Enum []AlwaysTrue
 type SimpleTypes interface{}
@@ -260,6 +284,7 @@ type Type struct {
 	SimpleTypes        *SimpleTypes
 	ArrayOfSimpleTypes *ArrayOfSimpleTypes
 }
+
 func (a *Type) UnmarshalJSON(bytes []byte) error {
 	var ok bool
 	var mySimpleTypes SimpleTypes
@@ -287,6 +312,7 @@ func (o Type) MarshalJSON() ([]byte, error) {
 	}
 	return json.Marshal(out)
 }
+
 type Format string
 type ContentMediaType string
 type ContentEncoding string
@@ -337,8 +363,10 @@ type JSONSchemaObject struct {
 	OneOf                *SchemaArray                   `json:"oneOf,omitempty"`
 	Not                  *JSONSchema                    `json:"not,omitempty"`
 }
+
 // Always valid if true. Never valid if false. Is constant.
 type JSONSchemaBoolean bool
+
 //
 // --- Default ---
 //
@@ -347,6 +375,7 @@ type JSONSchema struct {
 	JSONSchemaObject  *JSONSchemaObject
 	JSONSchemaBoolean *JSONSchemaBoolean
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -373,6 +402,7 @@ func (o JSONSchema) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type ContentDescriptorObjectRequired bool
 type ContentDescriptorObjectDeprecated bool
 type ContentDescriptorObject struct {
@@ -387,6 +417,7 @@ type ContentDescriptorOrReference struct {
 	ContentDescriptorObject *ContentDescriptorObject
 	ReferenceObject         *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -413,11 +444,13 @@ func (o ContentDescriptorOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type MethodObjectParams []ContentDescriptorOrReference
 type MethodObjectResult struct {
 	ContentDescriptorObject *ContentDescriptorObject
 	ReferenceObject         *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -444,12 +477,16 @@ func (o MethodObjectResult) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 // A Number that indicates the error type that occurred. This MUST be an integer. The error codes from and including -32768 to -32000 are reserved for pre-defined errors. These pre-defined errors SHOULD be assumed to be returned from any JSON-RPC api.
 type ErrorObjectCode int64
+
 // A String providing a short description of the error. The message SHOULD be limited to a concise single sentence.
 type ErrorObjectMessage string
+
 // A Primitive or Structured value that contains additional information about the error. This may be omitted. The value of this member is defined by the Server (e.g. detailed error information, nested errors etc.).
 type ErrorObjectData interface{}
+
 // Defines an application level error.
 type ErrorObject struct {
 	Code    *ErrorObjectCode    `json:"code"`
@@ -460,6 +497,7 @@ type ErrorOrReference struct {
 	ErrorObject     *ErrorObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -486,6 +524,7 @@ func (o ErrorOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 // Defines an application level error.
 type MethodObjectErrors []ErrorOrReference
 type LinkObjectName string
@@ -512,6 +551,7 @@ type LinkOrReference struct {
 	LinkObject      *LinkObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -538,6 +578,7 @@ func (o LinkOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type MethodObjectLinks []LinkOrReference
 type ExamplePairingObjectName string
 type ExamplePairingObjectDescription string
@@ -555,6 +596,7 @@ type ExampleOrReference struct {
 	ExampleObject   *ExampleObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -581,11 +623,13 @@ func (o ExampleOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type ExamplePairingObjectParams []ExampleOrReference
 type ExamplePairingObjectResult struct {
 	ExampleObject   *ExampleObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -612,6 +656,7 @@ func (o ExamplePairingObjectResult) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type ExamplePairingObject struct {
 	Name        *ExamplePairingObjectName        `json:"name"`
 	Description *ExamplePairingObjectDescription `json:"description,omitempty"`
@@ -622,6 +667,7 @@ type ExamplePairingOrReference struct {
 	ExamplePairingObject *ExamplePairingObject
 	ReferenceObject      *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -648,6 +694,7 @@ func (o ExamplePairingOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type MethodObjectExamples []ExamplePairingOrReference
 type MethodObjectDeprecated bool
 type MethodObject struct {
@@ -669,6 +716,7 @@ type MethodOrReference struct {
 	MethodObject    *MethodObject
 	ReferenceObject *ReferenceObject
 }
+
 // UnmarshalJSON implements the json Unmarshaler interface.
 // This implementation DOES NOT assert that ONE AND ONLY ONE
 // of the simple properties is satisfied; it lazily uses the first one that is satisfied.
@@ -695,6 +743,7 @@ func (o MethodOrReference) MarshalJSON() ([]byte, error) {
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
+
 type Methods []MethodOrReference
 type SchemaComponents map[string]interface{}
 type LinkComponents map[string]interface{}
