@@ -230,18 +230,6 @@ type StringArray []StringDoaGddGA
 // --- Default ---
 //
 // {}
-type Definitions orderedmap.OrderedMap
-
-//
-// --- Default ---
-//
-// {}
-type Properties orderedmap.OrderedMap
-
-//
-// --- Default ---
-//
-// {}
 type PatternProperties map[string]interface{}
 type DependenciesSet struct {
 	JSONSchema  *JSONSchema
@@ -344,8 +332,8 @@ type JSONSchemaObject struct {
 	MinProperties        *NonNegativeIntegerDefaultZero `json:"minProperties,omitempty"`
 	Required             *StringArray                   `json:"required,omitempty"`
 	AdditionalProperties *JSONSchema                    `json:"additionalProperties,omitempty"`
-	Definitions          *Definitions                   `json:"definitions,omitempty"`
-	Properties           *Properties                    `json:"properties,omitempty"`
+	Definitions          *orderedmap.OrderedMap         `json:"definitions,omitempty"`
+	Properties           *orderedmap.OrderedMap         `json:"properties,omitempty"`
 	PatternProperties    *PatternProperties             `json:"patternProperties,omitempty"`
 	Dependencies         *Dependencies                  `json:"dependencies,omitempty"`
 	PropertyNames        *JSONSchema                    `json:"propertyNames,omitempty"`
