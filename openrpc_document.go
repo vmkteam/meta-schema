@@ -179,6 +179,68 @@ type NonNegativeInteger int64
 type NonNegativeIntegerDefaultZero int64
 type Pattern string
 type SchemaArray []JSONSchema
+type SchemaMap []JSONSchema
+
+func (m SchemaMap) MarshalJSON() ([]byte, error) {
+	omap := orderedmap.New()
+	for _, schema := range m {
+		if schema.JSONSchemaObject.Id != nil {
+			key := string(*schema.JSONSchemaObject.Id)
+			schema.JSONSchemaObject.Id = nil
+
+			omap.Set(key, schema)
+		}
+	}
+
+	return json.Marshal(omap)
+}
+
+func (m *SchemaMap) UnmarshalJSON(bytes []byte) error {
+	omap := orderedmap.New()
+	if err := json.Unmarshal(bytes, omap); err != nil {
+		return err
+	}
+
+	var v map[string]JSONSchema
+	if err := json.Unmarshal(bytes, &v); err != nil {
+		return err
+	}
+
+	smap := SchemaMap{}
+	for _, k := range omap.Keys() {
+		if p, ok := v[k]; ok {
+			id := Id(k)
+			p.JSONSchemaObject.Id = &id
+			smap = append(smap, p)
+		}
+	}
+	*m = smap
+
+	return nil
+}
+
+func (m SchemaMap) Get(key string) (JSONSchema, bool) {
+	for _, schema := range m {
+		if schema.JSONSchemaObject != nil && schema.JSONSchemaObject.Id != nil {
+			if string(*schema.JSONSchemaObject.Id) == key {
+				return schema, true
+			}
+		}
+	}
+
+	return JSONSchema{}, false
+}
+
+func (m *SchemaMap) Add(key string, object JSONSchema) {
+	if m == nil || object.JSONSchemaObject == nil {
+		return
+	}
+
+	id := Id(key)
+	object.JSONSchemaObject.Id = &id
+
+	*m = append(*m, object)
+}
 
 //
 // --- Default ---
@@ -206,13 +268,13 @@ func (a *Items) UnmarshalJSON(bytes []byte) error {
 	}
 	return errors.New("failed to unmarshal any of the object properties")
 }
-func (o Items) MarshalJSON() ([]byte, error) {
+func (a Items) MarshalJSON() ([]byte, error) {
 	out := []interface{}{}
-	if o.JSONSchema != nil {
-		out = append(out, o.JSONSchema)
+	if a.JSONSchema != nil {
+		out = append(out, a.JSONSchema)
 	}
-	if o.SchemaArray != nil {
-		out = append(out, o.SchemaArray)
+	if a.SchemaArray != nil {
+		out = append(out, a.SchemaArray)
 	}
 	return json.Marshal(out)
 }
@@ -225,6 +287,12 @@ type StringDoaGddGA string
 //
 // []
 type StringArray []StringDoaGddGA
+
+//
+// --- Default ---
+//
+// {}
+type Definitions map[string]interface{}
 
 //
 // --- Default ---
@@ -332,8 +400,8 @@ type JSONSchemaObject struct {
 	MinProperties        *NonNegativeIntegerDefaultZero `json:"minProperties,omitempty"`
 	Required             *StringArray                   `json:"required,omitempty"`
 	AdditionalProperties *JSONSchema                    `json:"additionalProperties,omitempty"`
-	Definitions          *orderedmap.OrderedMap         `json:"definitions,omitempty"`
-	Properties           *orderedmap.OrderedMap         `json:"properties,omitempty"`
+	Definitions          *Definitions                   `json:"definitions,omitempty"`
+	Properties           *SchemaMap                     `json:"properties,omitempty"`
 	PatternProperties    *PatternProperties             `json:"patternProperties,omitempty"`
 	Dependencies         *Dependencies                  `json:"dependencies,omitempty"`
 	PropertyNames        *JSONSchema                    `json:"propertyNames,omitempty"`
@@ -431,6 +499,63 @@ func (o ContentDescriptorOrReference) MarshalJSON() ([]byte, error) {
 		return json.Marshal(o.ReferenceObject)
 	}
 	return nil, errors.New("failed to marshal any one of the object properties")
+}
+
+type DescriptorsMap []ContentDescriptorObject
+
+func (m DescriptorsMap) MarshalJSON() ([]byte, error) {
+	omap := orderedmap.New()
+	for _, schema := range m {
+		if schema.Name != nil {
+			key := string(*schema.Name)
+			omap.Set(key, schema)
+		}
+	}
+
+	return json.Marshal(omap)
+}
+
+func (m *DescriptorsMap) UnmarshalJSON(bytes []byte) error {
+	omap := orderedmap.New()
+	if err := json.Unmarshal(bytes, omap); err != nil {
+		return err
+	}
+
+	var v map[string]ContentDescriptorObject
+	if err := json.Unmarshal(bytes, &v); err != nil {
+		return err
+	}
+
+	dmap := DescriptorsMap{}
+	for _, k := range omap.Keys() {
+		if p, ok := v[k]; ok {
+			dmap = append(dmap, p)
+		}
+	}
+	*m = dmap
+
+	return nil
+}
+
+func (m DescriptorsMap) Get(key string) (ContentDescriptorObject, bool) {
+	for _, descriptor := range m {
+		if descriptor.Name != nil && string(*descriptor.Name) == key {
+			return descriptor, true
+		}
+	}
+
+	return ContentDescriptorObject{}, false
+}
+
+func (m *DescriptorsMap) Add(key string, object ContentDescriptorObject) {
+	if m == nil {
+		return
+	}
+
+	name := ContentDescriptorObjectName(key)
+	object.Name = &name
+
+	*m = append(*m, object)
 }
 
 type MethodObjectParams []ContentDescriptorOrReference
@@ -733,21 +858,20 @@ func (o MethodOrReference) MarshalJSON() ([]byte, error) {
 }
 
 type Methods []MethodOrReference
-type SchemaComponents map[string]interface{}
 type LinkComponents map[string]interface{}
 type ErrorComponents map[string]interface{}
 type ExampleComponents map[string]interface{}
 type ExamplePairingComponents map[string]interface{}
-type ContentDescriptorComponents map[string]interface{}
+
 type TagComponents map[string]interface{}
 type Components struct {
-	Schemas            *SchemaComponents            `json:"schemas,omitempty"`
-	Links              *LinkComponents              `json:"links,omitempty"`
-	Errors             *ErrorComponents             `json:"errors,omitempty"`
-	Examples           *ExampleComponents           `json:"examples,omitempty"`
-	ExamplePairings    *ExamplePairingComponents    `json:"examplePairings,omitempty"`
-	ContentDescriptors *ContentDescriptorComponents `json:"contentDescriptors,omitempty"`
-	Tags               *TagComponents               `json:"tags,omitempty"`
+	Schemas            *SchemaMap                `json:"schemas,omitempty"`
+	Links              *LinkComponents           `json:"links,omitempty"`
+	Errors             *ErrorComponents          `json:"errors,omitempty"`
+	Examples           *ExampleComponents        `json:"examples,omitempty"`
+	ExamplePairings    *ExamplePairingComponents `json:"examplePairings,omitempty"`
+	ContentDescriptors *DescriptorsMap           `json:"contentDescriptors,omitempty"`
+	Tags               *TagComponents            `json:"tags,omitempty"`
 }
 type OpenrpcDocument struct {
 	Openrpc      *Openrpc                     `json:"openrpc"`
