@@ -1,4 +1,4 @@
-module github.com/vmkteam/meta-schema
+module github.com/vmkteam/meta-schema/v2
 
 go 1.13
 

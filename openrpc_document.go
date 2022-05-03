@@ -35,86 +35,58 @@ const (
 	OpenrpcEnum22 Openrpc = "1.0.0-rc0"
 )
 
-type InfoObjectProperties string
-type InfoObjectDescription string
-type InfoObjectTermsOfService string
-type InfoObjectVersion string
-type ContactObjectName string
-type ContactObjectEmail string
-type ContactObjectUrl string
-type SpecificationExtension interface{}
 type ContactObject struct {
-	Name  *ContactObjectName  `json:"name,omitempty"`
-	Email *ContactObjectEmail `json:"email,omitempty"`
-	Url   *ContactObjectUrl   `json:"url,omitempty"`
+	Name  string `json:"name,omitempty"`
+	Email string `json:"email,omitempty"`
+	Url   string `json:"url,omitempty"`
 }
-type LicenseObjectName string
-type LicenseObjectUrl string
+
 type LicenseObject struct {
-	Name *LicenseObjectName `json:"name,omitempty"`
-	Url  *LicenseObjectUrl  `json:"url,omitempty"`
+	Name string `json:"name,omitempty"`
+	Url  string `json:"url,omitempty"`
 }
 type InfoObject struct {
-	Title          *InfoObjectProperties     `json:"title"`
-	Description    *InfoObjectDescription    `json:"description,omitempty"`
-	TermsOfService *InfoObjectTermsOfService `json:"termsOfService,omitempty"`
-	Version        *InfoObjectVersion        `json:"version"`
-	Contact        *ContactObject            `json:"contact,omitempty"`
-	License        *LicenseObject            `json:"license,omitempty"`
+	Title          string `json:"title"`
+	Description    string `json:"description,omitempty"`
+	TermsOfService string `json:"termsOfService,omitempty"`
+	Version        string `json:"version"`
+	Contact        string `json:"contact,omitempty"`
+	License        string `json:"license,omitempty"`
 }
-type ExternalDocumentationObjectDescription string
-type ExternalDocumentationObjectUrl string
 
 // information about external documentation
 type ExternalDocumentationObject struct {
-	Description *ExternalDocumentationObjectDescription `json:"description,omitempty"`
-	Url         *ExternalDocumentationObjectUrl         `json:"url"`
+	Description string `json:"description,omitempty"`
+	Url         string `json:"url"`
 }
-type ServerObjectUrl string
-type ServerObjectName string
-type ServerObjectDescription string
-type ServerObjectSummary string
-type ServerObjectVariableDefault string
-type ServerObjectVariableDescription string
-type ServerObjectVariableEnumItem string
-type ServerObjectVariableEnum []ServerObjectVariableEnumItem
+
 type ServerObjectVariable struct {
-	Default     *ServerObjectVariableDefault     `json:"default"`
-	Description *ServerObjectVariableDescription `json:"description,omitempty"`
-	Enum        *ServerObjectVariableEnum        `json:"enum,omitempty"`
+	Default     string   `json:"default"`
+	Description string   `json:"description,omitempty"`
+	Enum        []string `json:"enum,omitempty"`
 }
-type ServerObjectVariables map[string]interface{}
+
 type ServerObject struct {
-	Url         *ServerObjectUrl         `json:"url"`
-	Name        *ServerObjectName        `json:"name,omitempty"`
-	Description *ServerObjectDescription `json:"description,omitempty"`
-	Summary     *ServerObjectSummary     `json:"summary,omitempty"`
-	Variables   *ServerObjectVariables   `json:"variables,omitempty"`
+	Url         string                          `json:"url"`
+	Name        string                          `json:"name,omitempty"`
+	Description string                          `json:"description,omitempty"`
+	Summary     string                          `json:"summary,omitempty"`
+	Variables   map[string]ServerObjectVariable `json:"variables,omitempty"`
 }
-type Servers []ServerObject
 
-// The cannonical name for the method. The name MUST be unique within the methods array.
-type MethodObjectName string
-
-// A verbose explanation of the method behavior. GitHub Flavored Markdown syntax MAY be used for rich text representation.
-type MethodObjectDescription string
-
-// A short summary of what the method does.
-type MethodObjectSummary string
-type TagObjectName string
-type TagObjectDescription string
 type TagObject struct {
-	Name         *TagObjectName               `json:"name"`
-	Description  *TagObjectDescription        `json:"description,omitempty"`
+	Name         string                       `json:"name"`
+	Description  string                       `json:"description,omitempty"`
 	ExternalDocs *ExternalDocumentationObject `json:"externalDocs,omitempty"`
 }
-type Ref string
+
 type ReferenceObject struct {
-	Ref *Ref `json:"$ref"`
+	Ref string `json:"$ref"`
 }
+
 type TagOrReference struct {
-	TagObject       *TagObject
-	ReferenceObject *ReferenceObject
+	*TagObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -144,13 +116,7 @@ func (o TagOrReference) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-type MethodObjectTags []TagOrReference
-
 // Format the server expects the params. Defaults to 'either'.
-//
-// --- Default ---
-//
-// either
 type MethodObjectParamStructure string
 
 const (
@@ -159,34 +125,15 @@ const (
 	MethodObjectParamStructureEnum2 MethodObjectParamStructure = "either"
 )
 
-type ContentDescriptorObjectName string
-type ContentDescriptorObjectDescription string
-type ContentDescriptorObjectSummary string
-type Id string
-type Schema string
-type Comment string
-type Title string
-type Description string
 type AlwaysTrue interface{}
-type ReadOnly bool
-type Examples []AlwaysTrue
-type MultipleOf float64
-type Maximum float64
-type ExclusiveMaximum float64
-type Minimum float64
-type ExclusiveMinimum float64
-type NonNegativeInteger int64
-type NonNegativeIntegerDefaultZero int64
-type Pattern string
-type SchemaArray []JSONSchema
 type SchemaMap []JSONSchema
 
 func (m SchemaMap) MarshalJSON() ([]byte, error) {
 	omap := orderedmap.New()
 	for _, schema := range m {
-		if schema.JSONSchemaObject.Id != nil {
-			key := string(*schema.JSONSchemaObject.Id)
-			schema.JSONSchemaObject.Id = nil
+		if schema.JSONSchemaObject.Id != "" {
+			key := schema.JSONSchemaObject.Id
+			schema.JSONSchemaObject.Id = ""
 
 			omap.Set(key, schema)
 		}
@@ -209,8 +156,7 @@ func (m *SchemaMap) UnmarshalJSON(bytes []byte) error {
 	smap := SchemaMap{}
 	for _, k := range omap.Keys() {
 		if p, ok := v[k]; ok {
-			id := Id(k)
-			p.JSONSchemaObject.Id = &id
+			p.JSONSchemaObject.Id = k
 			smap = append(smap, p)
 		}
 	}
@@ -221,10 +167,8 @@ func (m *SchemaMap) UnmarshalJSON(bytes []byte) error {
 
 func (m SchemaMap) Get(key string) (JSONSchema, bool) {
 	for _, schema := range m {
-		if schema.JSONSchemaObject != nil && schema.JSONSchemaObject.Id != nil {
-			if string(*schema.JSONSchemaObject.Id) == key {
-				return schema, true
-			}
+		if schema.JSONSchemaObject != nil && schema.JSONSchemaObject.Id == key {
+			return schema, true
 		}
 	}
 
@@ -236,19 +180,15 @@ func (m *SchemaMap) Add(key string, object JSONSchema) {
 		return
 	}
 
-	id := Id(key)
-	object.JSONSchemaObject.Id = &id
+	object.JSONSchemaObject.Id = key
 
 	*m = append(*m, object)
 }
 
-//
-// --- Default ---
-//
-// true
+type SchemaArray []JSONSchema
 type Items struct {
-	JSONSchema  *JSONSchema
-	SchemaArray *SchemaArray
+	*JSONSchema
+	*SchemaArray
 }
 
 func (a *Items) UnmarshalJSON(bytes []byte) error {
@@ -279,29 +219,10 @@ func (a Items) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
-type UniqueItems bool
-type StringDoaGddGA string
-
-//
-// --- Default ---
-//
-// []
-type StringArray []StringDoaGddGA
-
-//
-// --- Default ---
-//
-// {}
-type Definitions map[string]interface{}
-
-//
-// --- Default ---
-//
-// {}
-type PatternProperties map[string]interface{}
+type StringArray []string
 type DependenciesSet struct {
-	JSONSchema  *JSONSchema
-	StringArray *StringArray
+	*JSONSchema
+	*StringArray
 }
 
 func (a *DependenciesSet) UnmarshalJSON(bytes []byte) error {
@@ -332,21 +253,30 @@ func (o DependenciesSet) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
-type Dependencies map[string]interface{}
-type Enum []AlwaysTrue
-type SimpleTypes interface{}
-type ArrayOfSimpleTypes []SimpleTypes
+type SimpleType string
+
+const (
+	SimpleTypeArray   = "array"
+	SimpleTypeBoolean = "boolean"
+	SimpleTypeInteger = "integer"
+	SimpleTypeNull    = "null"
+	SimpleTypeNumber  = "number"
+	SimpleTypeObject  = "object"
+	SimpleTypeString  = "string"
+)
+
+type ArrayOfSimpleTypes []SimpleType
 type Type struct {
-	SimpleTypes        *SimpleTypes
-	ArrayOfSimpleTypes *ArrayOfSimpleTypes
+	SimpleType
+	*ArrayOfSimpleTypes
 }
 
 func (a *Type) UnmarshalJSON(bytes []byte) error {
 	var ok bool
-	var mySimpleTypes SimpleTypes
+	var mySimpleTypes SimpleType
 	if err := json.Unmarshal(bytes, &mySimpleTypes); err == nil {
 		ok = true
-		a.SimpleTypes = &mySimpleTypes
+		a.SimpleType = mySimpleTypes
 	}
 	var myArrayOfSimpleTypes ArrayOfSimpleTypes
 	if err := json.Unmarshal(bytes, &myArrayOfSimpleTypes); err == nil {
@@ -359,65 +289,62 @@ func (a *Type) UnmarshalJSON(bytes []byte) error {
 	return errors.New("failed to unmarshal any of the object properties")
 }
 func (o Type) MarshalJSON() ([]byte, error) {
-	out := []interface{}{}
-	if o.SimpleTypes != nil {
-		out = append(out, o.SimpleTypes)
+	if o.SimpleType != "" {
+		return json.Marshal(o.SimpleType)
 	}
+	out := []interface{}{}
 	if o.ArrayOfSimpleTypes != nil {
 		out = append(out, o.ArrayOfSimpleTypes)
 	}
 	return json.Marshal(out)
 }
 
-type Format string
-type ContentMediaType string
-type ContentEncoding string
 type JSONSchemaObject struct {
-	Id                   *Id                            `json:"$id,omitempty"`
-	Schema               *Schema                        `json:"$schema,omitempty"`
-	Ref                  *Ref                           `json:"$ref,omitempty"`
-	Comment              *Comment                       `json:"$comment,omitempty"`
-	Title                *Title                         `json:"title,omitempty"`
-	Description          *Description                   `json:"description,omitempty"`
-	Default              *AlwaysTrue                    `json:"default,omitempty"`
-	ReadOnly             *ReadOnly                      `json:"readOnly,omitempty"`
-	Examples             *Examples                      `json:"examples,omitempty"`
-	MultipleOf           *MultipleOf                    `json:"multipleOf,omitempty"`
-	Maximum              *Maximum                       `json:"maximum,omitempty"`
-	ExclusiveMaximum     *ExclusiveMaximum              `json:"exclusiveMaximum,omitempty"`
-	Minimum              *Minimum                       `json:"minimum,omitempty"`
-	ExclusiveMinimum     *ExclusiveMinimum              `json:"exclusiveMinimum,omitempty"`
-	MaxLength            *NonNegativeInteger            `json:"maxLength,omitempty"`
-	MinLength            *NonNegativeIntegerDefaultZero `json:"minLength,omitempty"`
-	Pattern              *Pattern                       `json:"pattern,omitempty"`
-	AdditionalItems      *JSONSchema                    `json:"additionalItems,omitempty"`
-	Items                *Items                         `json:"items,omitempty"`
-	MaxItems             *NonNegativeInteger            `json:"maxItems,omitempty"`
-	MinItems             *NonNegativeIntegerDefaultZero `json:"minItems,omitempty"`
-	UniqueItems          *UniqueItems                   `json:"uniqueItems,omitempty"`
-	Contains             *JSONSchema                    `json:"contains,omitempty"`
-	MaxProperties        *NonNegativeInteger            `json:"maxProperties,omitempty"`
-	MinProperties        *NonNegativeIntegerDefaultZero `json:"minProperties,omitempty"`
-	Required             *StringArray                   `json:"required,omitempty"`
-	AdditionalProperties *JSONSchema                    `json:"additionalProperties,omitempty"`
-	Definitions          *Definitions                   `json:"definitions,omitempty"`
-	Properties           *SchemaMap                     `json:"properties,omitempty"`
-	PatternProperties    *PatternProperties             `json:"patternProperties,omitempty"`
-	Dependencies         *Dependencies                  `json:"dependencies,omitempty"`
-	PropertyNames        *JSONSchema                    `json:"propertyNames,omitempty"`
-	Const                *AlwaysTrue                    `json:"const,omitempty"`
-	Enum                 *Enum                          `json:"enum,omitempty"`
-	Type                 *Type                          `json:"type,omitempty"`
-	Format               *Format                        `json:"format,omitempty"`
-	ContentMediaType     *ContentMediaType              `json:"contentMediaType,omitempty"`
-	ContentEncoding      *ContentEncoding               `json:"contentEncoding,omitempty"`
-	If                   *JSONSchema                    `json:"if,omitempty"`
-	Then                 *JSONSchema                    `json:"then,omitempty"`
-	Else                 *JSONSchema                    `json:"else,omitempty"`
-	AllOf                *SchemaArray                   `json:"allOf,omitempty"`
-	AnyOf                *SchemaArray                   `json:"anyOf,omitempty"`
-	OneOf                *SchemaArray                   `json:"oneOf,omitempty"`
-	Not                  *JSONSchema                    `json:"not,omitempty"`
+	Id                   string                 `json:"$id,omitempty,identifier"`
+	Schema               string                 `json:"$schema,omitempty"`
+	Ref                  string                 `json:"$ref,omitempty"`
+	Comment              string                 `json:"$comment,omitempty"`
+	Title                string                 `json:"title,omitempty"`
+	Description          string                 `json:"description,omitempty"`
+	Default              *AlwaysTrue            `json:"default,omitempty"`
+	ReadOnly             bool                   `json:"readOnly,omitempty"`
+	Examples             []interface{}          `json:"examples,omitempty"`
+	MultipleOf           float64                `json:"multipleOf,omitempty"`
+	Maximum              float64                `json:"maximum,omitempty"`
+	ExclusiveMaximum     float64                `json:"exclusiveMaximum,omitempty"`
+	Minimum              float64                `json:"minimum,omitempty"`
+	ExclusiveMinimum     float64                `json:"exclusiveMinimum,omitempty"`
+	MaxLength            int64                  `json:"maxLength,omitempty"`
+	MinLength            int64                  `json:"minLength,omitempty"`
+	Pattern              string                 `json:"pattern,omitempty"`
+	AdditionalItems      *JSONSchema            `json:"additionalItems,omitempty"`
+	Items                *Items                 `json:"items,omitempty"`
+	MaxItems             int64                  `json:"maxItems,omitempty"`
+	MinItems             int64                  `json:"minItems,omitempty"`
+	UniqueItems          bool                   `json:"uniqueItems,omitempty"`
+	Contains             *JSONSchema            `json:"contains,omitempty"`
+	MaxProperties        int64                  `json:"maxProperties,omitempty"`
+	MinProperties        int64                  `json:"minProperties,omitempty"`
+	Required             []string               `json:"required,omitempty"`
+	AdditionalProperties *JSONSchema            `json:"additionalProperties,omitempty"`
+	Definitions          *SchemaMap             `json:"definitions,omitempty"`
+	Properties           *SchemaMap             `json:"properties,omitempty"`
+	PatternProperties    *SchemaMap             `json:"patternProperties,omitempty"`
+	Dependencies         map[string]interface{} `json:"dependencies,omitempty"`
+	PropertyNames        *JSONSchema            `json:"propertyNames,omitempty"`
+	Const                *AlwaysTrue            `json:"const,omitempty"`
+	Enum                 []interface{}          `json:"enum,omitempty"`
+	Type                 *Type                  `json:"type,omitempty"`
+	Format               string                 `json:"format,omitempty"`
+	ContentMediaType     string                 `json:"contentMediaType,omitempty"`
+	ContentEncoding      string                 `json:"contentEncoding,omitempty"`
+	If                   *JSONSchema            `json:"if,omitempty"`
+	Then                 *JSONSchema            `json:"then,omitempty"`
+	Else                 *JSONSchema            `json:"else,omitempty"`
+	AllOf                []JSONSchema           `json:"allOf,omitempty"`
+	AnyOf                []JSONSchema           `json:"anyOf,omitempty"`
+	OneOf                []JSONSchema           `json:"oneOf,omitempty"`
+	Not                  *JSONSchema            `json:"not,omitempty"`
 }
 
 // Always valid if true. Never valid if false. Is constant.
@@ -428,8 +355,8 @@ type JSONSchemaBoolean bool
 //
 // {}
 type JSONSchema struct {
-	JSONSchemaObject  *JSONSchemaObject
-	JSONSchemaBoolean *JSONSchemaBoolean
+	*JSONSchemaObject
+	*JSONSchemaBoolean
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -449,6 +376,7 @@ func (o *JSONSchema) UnmarshalJSON(bytes []byte) error {
 	}
 	return errors.New("failed to unmarshal one of the object properties")
 }
+
 func (o JSONSchema) MarshalJSON() ([]byte, error) {
 	if o.JSONSchemaObject != nil {
 		return json.Marshal(o.JSONSchemaObject)
@@ -459,19 +387,17 @@ func (o JSONSchema) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-type ContentDescriptorObjectRequired bool
-type ContentDescriptorObjectDeprecated bool
 type ContentDescriptorObject struct {
-	Name        *ContentDescriptorObjectName        `json:"name"`
-	Description *ContentDescriptorObjectDescription `json:"description,omitempty"`
-	Summary     *ContentDescriptorObjectSummary     `json:"summary,omitempty"`
-	Schema      *JSONSchema                         `json:"schema"`
-	Required    *ContentDescriptorObjectRequired    `json:"required,omitempty"`
-	Deprecated  *ContentDescriptorObjectDeprecated  `json:"deprecated,omitempty"`
+	Name        string      `json:"name,identifier"`
+	Description string      `json:"description,omitempty"`
+	Summary     string      `json:"summary,omitempty"`
+	Schema      *JSONSchema `json:"schema"`
+	Required    bool        `json:"required,omitempty"`
+	Deprecated  bool        `json:"deprecated,omitempty"`
 }
 type ContentDescriptorOrReference struct {
-	ContentDescriptorObject *ContentDescriptorObject
-	ReferenceObject         *ReferenceObject
+	*ContentDescriptorObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -506,9 +432,8 @@ type DescriptorsMap []ContentDescriptorObject
 func (m DescriptorsMap) MarshalJSON() ([]byte, error) {
 	omap := orderedmap.New()
 	for _, schema := range m {
-		if schema.Name != nil {
-			key := string(*schema.Name)
-			omap.Set(key, schema)
+		if schema.Name != "" {
+			omap.Set(schema.Name, schema)
 		}
 	}
 
@@ -539,7 +464,7 @@ func (m *DescriptorsMap) UnmarshalJSON(bytes []byte) error {
 
 func (m DescriptorsMap) Get(key string) (ContentDescriptorObject, bool) {
 	for _, descriptor := range m {
-		if descriptor.Name != nil && string(*descriptor.Name) == key {
+		if descriptor.Name == key {
 			return descriptor, true
 		}
 	}
@@ -552,16 +477,14 @@ func (m *DescriptorsMap) Add(key string, object ContentDescriptorObject) {
 		return
 	}
 
-	name := ContentDescriptorObjectName(key)
-	object.Name = &name
+	object.Name = key
 
 	*m = append(*m, object)
 }
 
-type MethodObjectParams []ContentDescriptorOrReference
 type MethodObjectResult struct {
-	ContentDescriptorObject *ContentDescriptorObject
-	ReferenceObject         *ReferenceObject
+	*ContentDescriptorObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -591,24 +514,15 @@ func (o MethodObjectResult) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-// A Number that indicates the error type that occurred. This MUST be an integer. The error codes from and including -32768 to -32000 are reserved for pre-defined errors. These pre-defined errors SHOULD be assumed to be returned from any JSON-RPC api.
-type ErrorObjectCode int64
-
-// A String providing a short description of the error. The message SHOULD be limited to a concise single sentence.
-type ErrorObjectMessage string
-
-// A Primitive or Structured value that contains additional information about the error. This may be omitted. The value of this member is defined by the Server (e.g. detailed error information, nested errors etc.).
-type ErrorObjectData interface{}
-
 // Defines an application level error.
 type ErrorObject struct {
-	Code    *ErrorObjectCode    `json:"code"`
-	Message *ErrorObjectMessage `json:"message"`
-	Data    *ErrorObjectData    `json:"data,omitempty"`
+	Code    int64       `json:"code,identifier"` // A Number that indicates the error type that occurred. This MUST be an integer. The error codes from and including -32768 to -32000 are reserved for pre-defined errors. These pre-defined errors SHOULD be assumed to be returned from any JSON-RPC api.
+	Message string      `json:"message"`         // A String providing a short description of the error. The message SHOULD be limited to a concise single sentence.
+	Data    interface{} `json:"data,omitempty"`  // A Primitive or Structured value that contains additional information about the error. This may be omitted. The value of this member is defined by the Server (e.g. detailed error information, nested errors etc.).
 }
 type ErrorOrReference struct {
-	ErrorObject     *ErrorObject
-	ReferenceObject *ReferenceObject
+	*ErrorObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -638,31 +552,24 @@ func (o ErrorOrReference) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-// Defines an application level error.
-type MethodObjectErrors []ErrorOrReference
-type LinkObjectName string
-type LinkObjectSummary string
-type LinkObjectMethod string
-type LinkObjectDescription string
-type LinkObjectParams interface{}
 type LinkObjectServer struct {
-	Url         *ServerObjectUrl         `json:"url"`
-	Name        *ServerObjectName        `json:"name,omitempty"`
-	Description *ServerObjectDescription `json:"description,omitempty"`
-	Summary     *ServerObjectSummary     `json:"summary,omitempty"`
-	Variables   *ServerObjectVariables   `json:"variables,omitempty"`
+	Url         string                          `json:"url"`
+	Name        string                          `json:"name,omitempty"`
+	Description string                          `json:"description,omitempty"`
+	Summary     string                          `json:"summary,omitempty"`
+	Variables   map[string]ServerObjectVariable `json:"variables,omitempty"`
 }
 type LinkObject struct {
-	Name        *LinkObjectName        `json:"name,omitempty"`
-	Summary     *LinkObjectSummary     `json:"summary,omitempty"`
-	Method      *LinkObjectMethod      `json:"method,omitempty"`
-	Description *LinkObjectDescription `json:"description,omitempty"`
-	Params      *LinkObjectParams      `json:"params,omitempty"`
-	Server      *LinkObjectServer      `json:"server,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Summary     string            `json:"summary,omitempty"`
+	Method      string            `json:"method,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Params      interface{}       `json:"params,omitempty"`
+	Server      *LinkObjectServer `json:"server,omitempty"`
 }
 type LinkOrReference struct {
-	LinkObject      *LinkObject
-	ReferenceObject *ReferenceObject
+	*LinkObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -693,21 +600,16 @@ func (o LinkOrReference) MarshalJSON() ([]byte, error) {
 }
 
 type MethodObjectLinks []LinkOrReference
-type ExamplePairingObjectName string
-type ExamplePairingObjectDescription string
-type ExampleObjectSummary string
 type ExampleObjectValue interface{}
-type ExampleObjectDescription string
-type ExampleObjectName string
 type ExampleObject struct {
-	Summary     *ExampleObjectSummary     `json:"summary,omitempty"`
-	Value       *ExampleObjectValue       `json:"value"`
-	Description *ExampleObjectDescription `json:"description,omitempty"`
-	Name        *ExampleObjectName        `json:"name"`
+	Summary     string      `json:"summary,omitempty"`
+	Value       interface{} `json:"value"`
+	Description string      `json:"description,omitempty"`
+	Name        string      `json:"name"`
 }
 type ExampleOrReference struct {
-	ExampleObject   *ExampleObject
-	ReferenceObject *ReferenceObject
+	*ExampleObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -737,10 +639,9 @@ func (o ExampleOrReference) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-type ExamplePairingObjectParams []ExampleOrReference
 type ExamplePairingObjectResult struct {
-	ExampleObject   *ExampleObject
-	ReferenceObject *ReferenceObject
+	*ExampleObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -771,14 +672,14 @@ func (o ExamplePairingObjectResult) MarshalJSON() ([]byte, error) {
 }
 
 type ExamplePairingObject struct {
-	Name        *ExamplePairingObjectName        `json:"name"`
-	Description *ExamplePairingObjectDescription `json:"description,omitempty"`
-	Params      *ExamplePairingObjectParams      `json:"params"`
-	Result      *ExamplePairingObjectResult      `json:"result"`
+	Name        string                      `json:"name"`
+	Description string                      `json:"description,omitempty"`
+	Params      []ExamplePairingOrReference `json:"params"`
+	Result      *ExamplePairingObjectResult `json:"result"`
 }
 type ExamplePairingOrReference struct {
-	ExamplePairingObject *ExamplePairingObject
-	ReferenceObject      *ReferenceObject
+	*ExamplePairingObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -808,26 +709,34 @@ func (o ExamplePairingOrReference) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-type MethodObjectExamples []ExamplePairingOrReference
-type MethodObjectDeprecated bool
 type MethodObject struct {
-	Name           *MethodObjectName            `json:"name"`
-	Description    *MethodObjectDescription     `json:"description,omitempty"`
-	Summary        *MethodObjectSummary         `json:"summary,omitempty"`
-	Servers        *Servers                     `json:"servers,omitempty"`
-	Tags           *MethodObjectTags            `json:"tags,omitempty"`
-	ParamStructure *MethodObjectParamStructure  `json:"paramStructure,omitempty"`
-	Params         *MethodObjectParams          `json:"params"`
-	Result         *MethodObjectResult          `json:"result"`
-	Errors         *MethodObjectErrors          `json:"errors,omitempty"`
-	Links          *MethodObjectLinks           `json:"links,omitempty"`
-	Examples       *MethodObjectExamples        `json:"examples,omitempty"`
-	Deprecated     *MethodObjectDeprecated      `json:"deprecated,omitempty"`
-	ExternalDocs   *ExternalDocumentationObject `json:"externalDocs,omitempty"`
+	Name           string                         `json:"name,identifier"`       // The cannonical name for the method. The name MUST be unique within the methods array.
+	Description    string                         `json:"description,omitempty"` // A verbose explanation of the method behavior. GitHub Flavored Markdown syntax MAY be used for rich text representation.
+	Summary        string                         `json:"summary,omitempty"`     // A short summary of what the method does.
+	Servers        []ServerObject                 `json:"servers,omitempty"`
+	Tags           []TagOrReference               `json:"tags,omitempty"`
+	ParamStructure MethodObjectParamStructure     `json:"paramStructure,omitempty"`
+	Params         []ContentDescriptorOrReference `json:"params"`
+	Result         *MethodObjectResult            `json:"result"`
+	Errors         []ErrorOrReference             `json:"errors,omitempty"`
+	Links          []LinkOrReference              `json:"links,omitempty"`
+	Examples       []ExamplePairingOrReference    `json:"examples,omitempty"`
+	Deprecated     bool                           `json:"deprecated,omitempty"`
+	ExternalDocs   *ExternalDocumentationObject   `json:"externalDocs,omitempty"`
 }
+
+func (o MethodObject) MarshalJSON() ([]byte, error) {
+	type aux MethodObject
+	if o.Params == nil {
+		o.Params = []ContentDescriptorOrReference{}
+	}
+
+	return json.Marshal(aux(o))
+}
+
 type MethodOrReference struct {
-	MethodObject    *MethodObject
-	ReferenceObject *ReferenceObject
+	*MethodObject
+	*ReferenceObject
 }
 
 // UnmarshalJSON implements the json Unmarshaler interface.
@@ -857,28 +766,21 @@ func (o MethodOrReference) MarshalJSON() ([]byte, error) {
 	return nil, errors.New("failed to marshal any one of the object properties")
 }
 
-type Methods []MethodOrReference
-type LinkComponents map[string]interface{}
-type ErrorComponents map[string]interface{}
-type ExampleComponents map[string]interface{}
-type ExamplePairingComponents map[string]interface{}
-
-type TagComponents map[string]interface{}
 type Components struct {
-	Schemas            *SchemaMap                `json:"schemas,omitempty"`
-	Links              *LinkComponents           `json:"links,omitempty"`
-	Errors             *ErrorComponents          `json:"errors,omitempty"`
-	Examples           *ExampleComponents        `json:"examples,omitempty"`
-	ExamplePairings    *ExamplePairingComponents `json:"examplePairings,omitempty"`
-	ContentDescriptors *DescriptorsMap           `json:"contentDescriptors,omitempty"`
-	Tags               *TagComponents            `json:"tags,omitempty"`
+	Schemas            *SchemaMap                      `json:"schemas,omitempty"`
+	Links              map[string]LinkObject           `json:"links,omitempty"`
+	Errors             map[string]ErrorObject          `json:"errors,omitempty"`
+	Examples           map[string]ExampleObject        `json:"examples,omitempty"`
+	ExamplePairings    map[string]ExamplePairingObject `json:"examplePairings,omitempty"`
+	ContentDescriptors *DescriptorsMap                 `json:"contentDescriptors,omitempty"`
+	Tags               map[string]TagObject            `json:"tags,omitempty"`
 }
 type OpenrpcDocument struct {
 	Openrpc      *Openrpc                     `json:"openrpc"`
 	Info         *InfoObject                  `json:"info"`
 	ExternalDocs *ExternalDocumentationObject `json:"externalDocs,omitempty"`
-	Servers      *Servers                     `json:"servers,omitempty"`
-	Methods      *Methods                     `json:"methods"`
+	Servers      []ServerObject               `json:"servers,omitempty"`
+	Methods      []MethodOrReference          `json:"methods"`
 	Components   *Components                  `json:"components,omitempty"`
 }
 
