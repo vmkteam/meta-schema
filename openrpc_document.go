@@ -131,11 +131,11 @@ type SchemaMap []JSONSchema
 func (m SchemaMap) MarshalJSON() ([]byte, error) {
 	omap := orderedmap.New()
 	for _, schema := range m {
-		if schema.JSONSchemaObject.Id != "" {
-			key := schema.JSONSchemaObject.Id
-			schema.JSONSchemaObject.Id = ""
+		if schema.JSONSchemaObject != nil && schema.JSONSchemaObject.Id != "" {
+			object := *schema.JSONSchemaObject
+			object.Id = ""
 
-			omap.Set(key, schema)
+			omap.Set(schema.JSONSchemaObject.Id, object)
 		}
 	}
 
